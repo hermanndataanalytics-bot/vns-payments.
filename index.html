@@ -180,25 +180,44 @@
     </section>
 
     <script>
-	<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 	
-        emailjs.init("6JFnKWujJ2xBrpeHg"); // Soloy ny anao
+	<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
+    <script>
+        // 2. Initialize Services
+        emailjs.init("6JFnKWujJ2xBrpeHg");
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFnzKXhDMpXIRkSZvqTJK07-LLI-E191c",
+            authDomain: "vns-v-483919.firebaseapp.com",
+            projectId: "vns-v-483919",
+            storageBucket: "vns-v-483919.firebasestorage.app",
+            messagingSenderId: "789344087804",
+            appId: "1:789344087804:web:64702f9ff46d248418f179"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 3. App Configuration
         const wallets = {
-            'TRC20': 'TA2xKhFrG9Lc53mTpi3stk1VeWVZiqF9mz', // TRC20 avy amin'ny Sary 1114
-            'ERC20': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e' // Soloy ny ERC20 anao
+            'TRC20': 'TA2xKhFrG9Lc53mTpi3stk1VeWVZiqF9mz',
+            'ERC20': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
         };
 
         let currentBilling = 'monthly';
         let currentNetwork = 'TRC20';
 
+        // 4. UI Functions
         function switchBilling(type) {
             currentBilling = type;
             document.querySelectorAll('.price').forEach(p => p.innerText = p.getAttribute(`data-${type}`));
             document.querySelectorAll('.duration').forEach(d => d.innerText = (type === 'monthly' ? '/mo' : ' (Once)'));
-            document.getElementById('btn-monthly').className = (type === 'monthly' ? 'bg-blue-600 px-8 py-2 rounded-full font-bold' : 'bg-gray-800 px-8 py-2 rounded-full text-gray-400 font-bold');
-            document.getElementById('btn-lifetime').className = (type === 'lifetime' ? 'bg-blue-600 px-8 py-2 rounded-full font-bold' : 'bg-gray-800 px-8 py-2 rounded-full text-gray-400 font-bold');
+            
+            document.getElementById('btn-monthly').className = (type === 'monthly' ? 'bg-blue-600 px-6 py-2 rounded-full font-bold' : 'bg-gray-800 px-6 py-2 rounded-full text-gray-400 font-bold');
+            document.getElementById('btn-lifetime').className = (type === 'lifetime' ? 'bg-blue-600 px-6 py-2 rounded-full font-bold' : 'bg-gray-800 px-6 py-2 rounded-full text-gray-400 font-bold');
         }
 
         function switchNetwork(net) {
@@ -206,15 +225,20 @@
             document.getElementById('wallet-addr').innerText = wallets[net];
             document.getElementById('net-label').innerText = `${net} Address`;
             document.getElementById('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${wallets[net]}`;
+            
             document.getElementById('btn-trc').className = (net === 'TRC20' ? 'bg-blue-600 flex-1 py-2 rounded-xl font-bold' : 'bg-gray-800 flex-1 py-2 rounded-xl text-gray-400 font-bold');
             document.getElementById('btn-erc').className = (net === 'ERC20' ? 'bg-blue-600 flex-1 py-2 rounded-xl font-bold' : 'bg-gray-800 flex-1 py-2 rounded-xl text-gray-400 font-bold');
         }
 
         function openPayment(plan) {
+            // Find price based on the current billing state
+            const priceElement = document.querySelector(`[data-monthly]`); // Simplified selector
             const price = document.querySelector(`button[onclick="openPayment('${plan}')"]`).parentElement.querySelector('.price').innerText;
+            
             document.getElementById('display-plan').innerText = plan;
             document.getElementById('display-price').innerText = price;
             document.getElementById('display-billing').innerText = (currentBilling === 'monthly' ? 'Monthly subscription' : 'Lifetime access');
+            
             document.getElementById('pricing').classList.add('hidden');
             document.getElementById('payment-page').classList.remove('hidden');
             switchNetwork('TRC20');
@@ -231,74 +255,56 @@
             alert("Address copied!");
         }
 
+        // 5. The Submit Function
         async function submit() {
-			// 1. Ny Configuration Firebase-nao
-		const firebaseConfig = {
-			apiKey: "AIzaSyAFnzKXhDMpXIRkSZvqTJK07-LLI-E191c",
-			authDomain: "vns-v-483919.firebaseapp.com",
-			projectId: "vns-v-483919",
-			storageBucket: "vns-v-483919.firebasestorage.app",
-			messagingSenderId: "789344087804",
-			appId: "1:789344087804:web:64702f9ff46d248418f179"
-		};
+            const btn = document.getElementById('sub-btn');
+            const emailValue = document.getElementById('email').value;
+            const txidValue = document.getElementById('txid').value;
+            const file = document.getElementById('file').files[0];
+            const planName = document.getElementById('display-plan').innerText;
 
-		// 2. Initialize Firebase
-		firebase.initializeApp(firebaseConfig);
-		const db = firebase.firestore();
+            if(!file || !emailValue || !txidValue) return alert("Fenoy ny banga rehetra azafady!");
 
-		// 3. Ny function submit namboarina
-		async function submit() {
-			const btn = document.getElementById('sub-btn');
-			const emailValue = document.getElementById('email').value;
-			const txidValue = document.getElementById('txid').value; // Aza adino ny TXID
-			const file = document.getElementById('file').files[0];
-			const planName = document.getElementById('display-plan').innerText;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
 
-			if(!file || !emailValue || !txidValue) return alert("Fenoy ny banga rehetra azafady!");
+            try {
+                // A. Upload to ImgBB
+                const formData = new FormData();
+                formData.append("image", file);
+                const res = await fetch("https://api.imgbb.com/1/upload?key=b795e372fe07808e8261bd73ee82159e", { 
+                    method: "POST", 
+                    body: formData 
+                });
+                const data = await res.json();
+                const imageUrl = data.data.url;
 
-			btn.innerText = "Processing...";
-			btn.disabled = true;
+                // B. Save to Firestore
+                await db.collection("pending_payments").add({
+                    email: emailValue,
+                    plan: planName,
+                    txid: txidValue,
+                    receipt_url: imageUrl,
+                    status: "pending",
+                    duration: currentBilling === 'monthly' ? 'Monthly' : 'Lifetime',
+                    date: new Date().toISOString()
+                });
 
-			try {
-				// A. Upload sary any amin'ny ImgBB (efa mety ny anao)
-				const formData = new FormData();
-				formData.append("image", file);
-				const res = await fetch("https://api.imgbb.com/1/upload?key=b795e372fe07808e8261bd73ee82159e", { method: "POST", body: formData });
-				const data = await res.json();
-				const imageUrl = data.data.url;
+                // C. Update UI
+                document.getElementById('conf-plan').innerText = planName;
+                document.getElementById('conf-billing').innerText = currentBilling === 'monthly' ? 'Monthly' : 'Lifetime';
+                document.getElementById('conf-email').innerText = emailValue;
 
-				// B. TEHIRIZINA AO AMIN'NY FIRESTORE (Ity no mampifandray azy amin'ny Admin Panel)
-				// Ny anaran'ny collection dia "pending_payments" araka ny Admin Panel-nao
-				await db.collection("pending_payments").add({
-					email: emailValue,
-					plan: planName,
-					txid: txidValue,
-					receipt_url: imageUrl,
-					status: "pending", // "pending" no tadiavin'ny Admin Panel
-					duration: currentBilling === 'monthly' ? 'Monthly' : 'Lifetime',
-					date: new Date().toISOString() // Daty ho an'ny filaharana
-				});
+                document.getElementById('payment-form').classList.add('hidden');
+                document.getElementById('success-state').classList.remove('hidden');
 
-				// C. (Optional) Azonao tohizana amin'ny EmailJS raha mbola tianao
-				/*
-				await emailjs.send("service_sqpgdob", "template_xsdd3v7", { ... });
-				*/
-
-				// D. Fanovana ny UI rehefa tafiditra
-				document.getElementById('conf-plan').innerText = planName;
-				document.getElementById('conf-billing').innerText = currentBilling === 'monthly' ? 'Monthly' : 'Lifetime';
-				document.getElementById('conf-email').innerText = emailValue;
-
-				document.getElementById('payment-form').classList.add('hidden');
-				document.getElementById('success-state').classList.remove('hidden');
-
-			} catch (e) {
-				console.error(e);
-				alert("Nisy hadisoana: " + e.message);
-				btn.disabled = false;
-				btn.innerText = "Submit Payment";
-			}
-		}
+            } catch (e) {
+                console.error(e);
+                alert("Error: " + e.message);
+                btn.disabled = false;
+                btn.innerText = "Submit Payment";
+            }
+        }
     </script>
 </body>
 </html>
