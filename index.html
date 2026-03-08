@@ -41,27 +41,57 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="glass p-8 rounded-3xl flex flex-col">
-                <h3 class="text-gray-400 font-bold text-sm">BASIC</h3>
-                <div class="my-6 text-4xl font-extrabold">$<span class="price" data-monthly="19" data-lifetime="199">19</span><span class="duration text-xs text-gray-500">/mo</span></div>
-                <ul class="text-xs space-y-3 mb-8 flex-grow text-gray-400">
-                    <li>✅ 3 Forex Assets</li>
-                    <li>✅ Live Analysis</li>
-                </ul>
-                <button onclick="openPayment('BASIC', event)" class="w-full bg-gray-800 py-3 rounded-xl font-bold hover:bg-gray-700">Pay with Crypto</button>
-            </div>
-            <div class="glass p-8 rounded-3xl border-blue-500 relative scale-105 flex flex-col">
-                <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[10px] px-3 py-1 rounded-full font-bold">POPULAR</span>
-                <h3 class="text-blue-400 font-bold text-sm">PRO</h3>
-                <div class="my-6 text-4xl font-extrabold">$<span class="price" data-monthly="49" data-lifetime="499">49</span><span class="duration text-xs text-gray-500">/mo</span></div>
-                <ul class="text-xs space-y-3 mb-8 flex-grow text-gray-300">
-                    <li>✅ 12 Assets</li>
-                    <li>✅ AI Analysis</li>
-                </ul>
-                <button onclick="openPayment('PRO', event)" class="w-full hero-btn py-3 rounded-xl font-bold">Pay with Crypto</button>
-            </div>
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+    
+    <div class="glass p-6 rounded-3xl flex flex-col h-full">
+        <h3 class="text-gray-400 font-bold text-sm">BASIC</h3>
+        <div class="my-6 text-4xl font-extrabold">$<span class="price" data-monthly="19" data-lifetime="199">19</span><span class="duration text-xs text-gray-500">/mo</span></div>
+        <ul class="text-xs space-y-3 mb-8 flex-grow text-gray-400">
+            <li>✅ 3 Forex Assets</li>
+            <li>✅ Live Analysis</li>
+            <li>✅ VNS Support</li>
+        </ul>
+        <button onclick="openPayment('BASIC', event)" class="w-full bg-gray-800 py-3 rounded-xl font-bold hover:bg-gray-700">Pay with Crypto</button>
+    </div>
+
+    <div class="glass p-6 rounded-3xl border-blue-500 relative scale-105 z-10 flex flex-col h-full bg-[#0a0d14]">
+        <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[10px] px-3 py-1 rounded-full font-bold shadow-lg shadow-blue-500/50">POPULAR</span>
+        <h3 class="text-blue-400 font-bold text-sm">PRO</h3>
+        <div class="my-6 text-4xl font-extrabold">$<span class="price" data-monthly="49" data-lifetime="499">49</span><span class="duration text-xs text-gray-500">/mo</span></div>
+        <ul class="text-xs space-y-3 mb-8 flex-grow text-gray-300">
+            <li>✅ 12 Assets</li>
+            <li>✅ AI Analysis</li>
+            <li>✅ PDF Reports</li>
+            <li>✅ Signal Sync</li>
+        </ul>
+        <button onclick="openPayment('PRO', event)" class="w-full hero-btn py-3 rounded-xl font-bold shadow-lg shadow-blue-500/30">Pay with Crypto</button>
+    </div>
+
+    <div class="glass p-6 rounded-3xl flex flex-col h-full">
+        <h3 class="text-gray-400 font-bold text-sm">ELITE</h3>
+        <div class="my-6 text-4xl font-extrabold">$<span class="price" data-monthly="99" data-lifetime="999">99</span><span class="duration text-xs text-gray-500">/mo</span></div>
+        <ul class="text-xs space-y-3 mb-8 flex-grow text-gray-400">
+            <li>✅ Everything in PRO</li>
+            <li>✅ Crypto Quant</li>
+            <li>✅ VIP Database</li>
+            <li>✅ Macro Calendar</li>
+        </ul>
+        <button onclick="openPayment('ELITE', event)" class="w-full bg-gray-800 py-3 rounded-xl font-bold hover:bg-gray-700">Pay with Crypto</button>
+    </div>
+
+    <div class="glass p-6 rounded-3xl flex flex-col h-full">
+        <h3 class="text-gray-400 font-bold text-sm">PREMIUM</h3>
+        <div class="my-6 text-4xl font-extrabold">$<span class="price" data-monthly="149" data-lifetime="1499">149</span><span class="duration text-xs text-gray-500">/mo</span></div>
+        <ul class="text-xs space-y-3 mb-8 flex-grow text-gray-400">
+            <li>✅ Everything in ELITE</li>
+            <li>✅ Full Access</li>
+            <li>✅ Priority 24/7</li>
+            <li>✅ Neural Predictions</li>
+        </ul>
+        <button onclick="openPayment('PREMIUM', event)" class="w-full bg-gray-800 py-3 rounded-xl font-bold hover:bg-gray-700">Pay with Crypto</button>
+    </div>
+
+    </div>
     </section>
 
     <section id="payment-page" class="hidden max-w-5xl mx-auto mt-16">
@@ -226,3 +256,4 @@
     </script>
 </body>
 </html>
+
