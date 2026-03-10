@@ -285,7 +285,7 @@
                 // A. Upload to ImgBB
                 const formData = new FormData();
                 formData.append("image", file);
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=__IMGBB_API_KEY__`, { method: "POST", body: formData });
+                const res = await fetch("https://vns-terminator.streamlit.app/?upload_receipt=1", { method: "POST", body: formData });
                 const data = await res.json();
                 const imageUrl = data.data.url;
 
@@ -317,4 +317,5 @@
     </script>
 </body>
 </html>
+
 
