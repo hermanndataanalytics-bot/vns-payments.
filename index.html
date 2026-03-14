@@ -203,7 +203,8 @@
 
     </div>
     </footer>
-
+	
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -276,19 +277,19 @@
 			btn.disabled = true;
 
 			try {
-				// A. Upload sary any amin'ny Supabase Storage (Bucket: PAYEMENTS)
-				const fileName = `${Date.now()}-${file.name}`;
+				// 1. Upload sary (Bucket: PAYEMENTS)
+				const fileName = `proofs/${Date.now()}-${file.name}`;
 				const { data: storageData, error: storageError } = await _supabase.storage
 					.from('PAYEMENTS')
 					.upload(fileName, file);
 
 				if (storageError) throw storageError;
 
-				// B. Maka ny Public URL an'ilay sary
+				// 2. Maka ny Public URL
 				const { data: urlData } = _supabase.storage.from('PAYEMENTS').getPublicUrl(fileName);
 				const imageUrl = urlData.publicUrl;
 
-				// C. Mitahiry ny mombamomba ny fandoavam-bola ao amin'ny Table
+				// 3. Insert ao amin'ny Table 'payment_proofs'
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
@@ -301,23 +302,21 @@
 
 				if (dbError) throw dbError;
 
-				alert("Payment submitted successfully!")
-			
-                // C. Show Success UI
-                const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
-                document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
-                
-                document.getElementById('payment-content').classList.add('hidden');
-                document.getElementById('successCard').classList.remove('hidden');
+				// 4. Show Success UI
+				const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
+				document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
+				document.getElementById('payment-content').classList.add('hidden');
+				document.getElementById('successCard').classList.remove('hidden');
 
-            } catch (e) {
-                console.error(e);
-                alert("Error: " + e.message);
-                btn.disabled = false;
-                btn.innerText = "Submit Payment";
-            }
-        }
-    </script>
+			} catch (e) {
+				console.error(e);
+				alert("Error: " + e.message);
+				btn.disabled = false;
+				btn.innerText = "Submit Payment";
+			}
+		}
+		
+	</script>
 </body>
 </html>
 
