@@ -282,36 +282,32 @@
             btn.disabled = true;
 
             try {
-                // A. Upload to ImgBB
-				const formData = new FormData();
-				formData.append("image", file);
+				// A. Upload any amin'ny Supabase Storage (Bucket: PAYEMENTS)
+				const fileName = `proofs/${emailValue}-${Date.now()}.png`;
+				const { data: storageData, error: storageError } = await _supabase.storage
+					.from('PAYEMENTS')
+					.upload(fileName, file);
 
-				const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-					method: "POST",
-					body: formData
-				});
+				if (storageError) throw storageError;
 
-				const data = await res.json();
+				// Maka ny URL an'ilay sary vao tafakatra
+				const { data: urlData } = _supabase.storage.from('PAYEMENTS').getPublicUrl(fileName);
+				const imageUrl = urlData.publicUrl;
 
-				if (data && data.data && data.data.url) {
-					const imageUrl = data.data.url;
-				} else {
-					alert("Upload failed");
-					console.log(data);
-					return;
-				}
+				// B. Save any amin'ny Supabase Table (payment_proofs)
+				const { error: dbError } = await _supabase
+					.from('payment_proofs')
+					.insert([{
+						user_uid: emailValue, // na ampiasao ny UID raha misy
+						email: emailValue,
+						plan: planName,
+						txid: txidValue,
+						image_url: imageUrl,
+						status: "pending",
+						duration: currentBilling === 'monthly' ? 'Monthly' : 'Lifetime'
+					}]);
 
-
-                // B. Save to Firestore
-                await db.collection("pending_payments").add({
-                    email: emailValue,
-                    plan: planName,
-                    txid: txidValue,
-                    receipt_url: imageUrl,
-                    status: "pending",
-                    duration: currentBilling === 'monthly' ? 'Monthly' : 'Lifetime',
-                    date: new Date().toISOString()
-                });
+				if (dbError) throw dbError;
 
                 // C. Show Success UI
                 const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
