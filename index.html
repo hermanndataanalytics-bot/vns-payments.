@@ -268,7 +268,7 @@
 			const btn = document.getElementById('sub-btn');
 			const emailValue = document.getElementById('email').value;
 			const txidValue = document.getElementById('txid').value;
-			const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+			const file = document.getElementById('file').files[0];
 			const planName = document.getElementById('display-plan').innerText;
 
 			if(!file || !emailValue || !txidValue) return alert("Please fill in all the blanks!");
@@ -277,31 +277,34 @@
 			btn.disabled = true;
 
 			try {
-				// 1. Upload sary (Bucket: PAYEMENTS)
-				const fileName = `proofs/${Date.now()}-${file.name}`;
+				// 1. Farito ny anaran'ny sary (fileName)
+				const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+
+				// 2. Upload sary any amin'ny Supabase Storage (Bucket: PAYEMENTS)
 				const { data: storageData, error: storageError } = await _supabase.storage
 					.from('PAYEMENTS')
-					.upload(imageUrl, file);
+					.upload(fileName, file);
+
 				if (storageError) throw storageError;
 
-				// 2. Maka ny Public URL
+				// 3. Alao ny Public URL an'ilay sary vao tafiditra
 				const { data: urlData } = _supabase.storage.from('PAYEMENTS').getPublicUrl(fileName);
-				const imageUrl = urlData.publicUrl;
+				const imageUrlValue = urlData.publicUrl; // Nomena anarana mazava tsara eto
 
-				// 3. Insert ao amin'ny Table 'payment_proofs'
+				// 4. Tehirizo ao amin'ny tabilao 'payment_proofs' ny mombamomba azy
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
 						email: emailValue,
 						plan: planName,
 						txid: txidValue,
-						image_url: imageUrl,
+						image_url: imageUrlValue, // Ampiasaina ilay variable vao noforonina
 						status: 'pending'
 					}]);
 
 				if (dbError) throw dbError;
 
-				// 4. Show Success UI
+				// 5. Naseho ny Success UI
 				const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
 				document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
 				document.getElementById('payment-content').classList.add('hidden');
@@ -314,7 +317,7 @@
 				btn.innerText = "Submit Payment";
 			}
 		}
-		
+				
 	</script>
 </body>
 </html>
