@@ -268,53 +268,53 @@
 			navigator.clipboard.writeText(wallets[currentNetwork]);
 			alert("Address copied!");
 		}
-		// --- INITIALIZE SUPABASE ---
+		// Apetraho eto amin'ny andalana voalohany amin'ny script
 		const { createClient } = supabase;
-		const _url = 'https://fhxahmtkptciwadqrdcn.supabase.co'; 
-		// Nampiana ' any amin'ny farany ho fanitsiana
+		const _url = 'https://fhxahmtkptciwadqrdcn.supabase.co';
 		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
 		const _supabase = createClient(_url, _key);
-		
+
+		// Rehefa vita ny ambony vao manoratra ny function
 		async function submit() {
-            const btn = document.getElementById('sub-btn');
-            const emailValue = document.getElementById('email').value;
-            const txidValue = document.getElementById('txid').value;
-            const file = document.getElementById('file').files[0];
-            const planName = document.getElementById('display-plan').innerText;
+			const btn = document.getElementById('sub-btn');
+			const emailValue = document.getElementById('email').value;
+			const txidValue = document.getElementById('txid').value;
+			const file = document.getElementById('file').files[0];
+			const planName = document.getElementById('display-plan').innerText;
 
-            if(!file || !emailValue || !txidValue) return alert("Please fill in all the blanks!");
+			if(!file || !emailValue || !txidValue) return alert("Please fill in all the blanks!");
 
-            btn.innerText = "Processing...";
-            btn.disabled = true;
+			btn.innerText = "Processing...";
+			btn.disabled = true;
 
-            try {
-				// A. Upload any amin'ny Supabase Storage (Bucket: PAYEMENTS)
-				const fileName = `proofs/${emailValue}-${Date.now()}.png`;
+			try {
+				// A. Upload sary any amin'ny Supabase Storage (Bucket: PAYEMENTS)
+				const fileName = `${Date.now()}-${file.name}`;
 				const { data: storageData, error: storageError } = await _supabase.storage
 					.from('PAYEMENTS')
 					.upload(fileName, file);
 
 				if (storageError) throw storageError;
 
-				// Maka ny URL an'ilay sary vao tafakatra
+				// B. Maka ny Public URL an'ilay sary
 				const { data: urlData } = _supabase.storage.from('PAYEMENTS').getPublicUrl(fileName);
 				const imageUrl = urlData.publicUrl;
 
-				// B. Save any amin'ny Supabase Table (payment_proofs)
+				// C. Mitahiry ny mombamomba ny fandoavam-bola ao amin'ny Table
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
-						user_uid: emailValue, // na ampiasao ny UID raha misy
 						email: emailValue,
 						plan: planName,
 						txid: txidValue,
 						image_url: imageUrl,
-						status: "pending",
-						duration: currentBilling === 'monthly' ? 'Monthly' : 'Lifetime'
+						status: 'pending'
 					}]);
 
 				if (dbError) throw dbError;
 
+				alert("Payment submitted successfully!")
+			
                 // C. Show Success UI
                 const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
                 document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
