@@ -263,7 +263,6 @@
 		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
 		const _supabase = createClient(_url, _key);
 
-		// Rehefa vita ny ambony vao manoratra ny function
 		async function submit() {
 			const btn = document.getElementById('sub-btn');
 			const emailValue = document.getElementById('email').value;
@@ -277,34 +276,39 @@
 			btn.disabled = true;
 
 			try {
-				// 1. Farito ny anaran'ny sary (fileName)
-				const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
 
-				// 2. Upload sary any amin'ny Supabase Storage (Bucket: PAYEMENTS)
+				// ✔ Generate filename sécurisé
+				const extension = file.name.split('.').pop();
+				const fileName = `${Date.now()}-${Math.random().toString(36).substring(2,10)}.${extension}`;
+
+				// ✔ Upload Supabase Storage
 				const { data: storageData, error: storageError } = await _supabase.storage
 					.from('PAYEMENTS')
 					.upload(fileName, file);
 
 				if (storageError) throw storageError;
 
-				// 3. Alao ny Public URL an'ilay sary vao tafiditra
-				const { data: urlData } = _supabase.storage.from('PAYEMENTS').getPublicUrl(fileName);
-				const imageUrlValue = urlData.publicUrl; // Nomena anarana mazava tsara eto
+				// ✔ Get Public URL
+				const { data: urlData } = _supabase.storage
+					.from('PAYEMENTS')
+					.getPublicUrl(fileName);
 
-				// 4. Tehirizo ao amin'ny tabilao 'payment_proofs' ny mombamomba azy
+				const imageUrlValue = urlData.publicUrl;
+
+				// ✔ Insert Database
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
 						email: emailValue,
 						plan: planName,
 						txid: txidValue,
-						image_url: imageUrlValue, // Ampiasaina ilay variable vao noforonina
+						image_url: imageUrlValue,
 						status: 'pending'
 					}]);
 
 				if (dbError) throw dbError;
 
-				// 5. Naseho ny Success UI
+				// ✔ Success UI
 				const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
 				document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
 				document.getElementById('payment-content').classList.add('hidden');
@@ -317,7 +321,7 @@
 				btn.innerText = "Submit Payment";
 			}
 		}
-				
+		
 	</script>
 </body>
 </html>
