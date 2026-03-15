@@ -299,7 +299,7 @@
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
-						email: emailValue,
+						user_email: emailValue,
 						plan: planName,
 						txid: txidValue,
 						image_url: imageUrlValue,
