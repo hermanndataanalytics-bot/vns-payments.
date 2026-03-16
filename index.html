@@ -294,19 +294,30 @@
 					.getPublicUrl(fileName);
 
 				const imageUrlValue = urlData.publicUrl;
+				
+				// 1. Alao ny session an'ny mpampiasa ankehitriny
+				const { data: { user } } = await _supabase.auth.getUser();
+
+				// Raha tsy misy mpampiasa tafiditra (null), azonao atao ny mampitandrina azy
+				if (!user) {
+					alert("Please log in first!");
+					return;
+				}
+
+				const userUidValue = user.id; // Ity ny UID avy amin'ny Auth
 
 				// ✔ Insert Database
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
+						user_uid: userUidValue, // UID azo avy amin'ny auth.getUser()
 						user_email: emailValue,
 						plan: planName,
 						txid: txidValue,
 						image_url: imageUrlValue,
-						status: 'pending'
+						status: 'pending',
+						created_at: new Date().toISOString()
 					}]);
-
-				if (dbError) throw dbError;
 
 				// ✔ Success UI
 				const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
