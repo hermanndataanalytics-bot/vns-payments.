@@ -263,6 +263,10 @@
 		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
 		const _supabase = createClient(_url, _key);
 
+		// --- ALAO NY UID AVY AMIN'NY URL ---
+		const urlParams = new URLSearchParams(window.location.search);
+		const userUidFromUrl = urlParams.get('uid');
+
 		async function submit() {
 			const btn = document.getElementById('sub-btn');
 			const emailValue = document.getElementById('email').value;
@@ -270,60 +274,51 @@
 			const file = document.getElementById('file').files[0];
 			const planName = document.getElementById('display-plan').innerText;
 
+			// Fanamarinana raha misy ny UID
+			if (!userUidFromUrl) {
+				return alert("Error: User session not found. Please open this page from the VNS App.");
+			}
+
 			if(!file || !emailValue || !txidValue) return alert("Please fill in all the blanks!");
 
 			btn.innerText = "Processing...";
 			btn.disabled = true;
 
 			try {
-
-				// ✔ Generate filename sécurisé
+				// 1. Upload Supabase Storage
 				const extension = file.name.split('.').pop();
-				const fileName = `${Date.now()}-${Math.random().toString(36).substring(2,10)}.${extension}`;
+				const fileName = `${Date.now()}-${userUidFromUrl.substring(0,5)}.${extension}`;
 
-				// ✔ Upload Supabase Storage
 				const { data: storageData, error: storageError } = await _supabase.storage
-					.from('PAYEMENTS')
+					.from('PAYEMENTS') // Hamarino tsara fa mitovy amin'ny any amin'ny Supabase ny anarany
 					.upload(fileName, file);
 
 				if (storageError) throw storageError;
 
-				// ✔ Get Public URL
+				// 2. Get Public URL
 				const { data: urlData } = _supabase.storage
 					.from('PAYEMENTS')
 					.getPublicUrl(fileName);
 
-				const imageUrlValue = urlData.publicUrl;
-				
-				// 1. Alao ny session an'ny mpampiasa ankehitriny
-				const { data: { user } } = await _supabase.auth.getUser();
-
-				// Raha tsy misy mpampiasa tafiditra (null), azonao atao ny mampitandrina azy
-				if (!user) {
-					alert("Please log in first!");
-					return;
-				}
-
-				const userUidValue = user.id; // Ity ny UID avy amin'ny Auth
-
-				// ✔ Insert Database
+				// 3. Insert Database
+				// Ampiasao ny user_id (na user_uid arakaraka ny anarany ao amin'ny DB-nao)
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
-						user_uid: userUidValue, // UID azo avy amin'ny auth.getUser()
+						user_id: userUidFromUrl, // Ity ilay UID azo avy amin'ny URL
 						user_email: emailValue,
 						plan: planName,
 						txid: txidValue,
-						image_url: imageUrlValue,
+						image_url: urlData.publicUrl,
 						status: 'pending',
 						created_at: new Date().toISOString()
 					}]);
 
-				// ✔ Success UI
-				const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
-				document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
-				document.getElementById('payment-content').classList.add('hidden');
-				document.getElementById('successCard').classList.remove('hidden');
+				if (dbError) throw dbError;
+
+				// Success UI...
+				alert("Payment proof submitted successfully!");
+				// (Ilay kaody fanovana pejy successCard...)
 
 			} catch (e) {
 				console.error(e);
