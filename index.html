@@ -210,9 +210,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
     <script>
-	     
-        emailjs.init("6JFnKWujJ2xBrpeHg");
-
+	    // Apetraho eto amin'ny andalana voalohany amin'ny script
+		const { createClient } = supabase;
+		const _url = 'https://fhxahmtkptciwadqrdcn.supabase.co';
+		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
+		const _supabase = createClient(_url, _key);
         const wallets = {
             'TRC20': 'TA2xKhFrG9Lc53mTpi3stk1VeWVZiqF9mz',
             'ERC20': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
@@ -258,75 +260,70 @@
 			navigator.clipboard.writeText(wallets[currentNetwork]);
 			alert("Address copied!");
 		}
-		// Apetraho eto amin'ny andalana voalohany amin'ny script
-		const { createClient } = supabase;
-		const _url = 'https://fhxahmtkptciwadqrdcn.supabase.co';
-		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
-		const _supabase = createClient(_url, _key);
+		
+		async function submit() {
+			const btn = document.getElementById('sub-btn');
+			const emailValue = document.getElementById('email').value;
+			const txidValue = document.getElementById('txid').value;
+			const file = document.getElementById('file').files[0];
+			const planName = document.getElementById('display-plan').innerText;
 
-		/async function submit() {
-		const btn = document.getElementById('sub-btn');
-		const emailValue = document.getElementById('email').value;
-		const txidValue = document.getElementById('txid').value;
-		const file = document.getElementById('file').files[0];
-		const planName = document.getElementById('display-plan').innerText;
+			if(!file || !emailValue || !txidValue) return alert("Please fill in all the blanks!");
 
-		if(!file || !emailValue || !txidValue) return alert("Please fill in all the blanks!");
+			btn.innerText = "Processing...";
+			btn.disabled = true;
 
-		btn.innerText = "Processing...";
-		btn.disabled = true;
+			try {
+				// 1. Raiso ny session avy amin'ny Supabase
+				const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
+				if (sessionError || !session?.user) {
+					throw new Error("User session not found. Please login first.");
+				}
+				const userUid = session.user.id;
 
-		try {
-			// 1. Raiso ny session avy amin'ny Supabase
-			const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
-			if (sessionError || !session?.user) {
-				throw new Error("User session not found. Please login first.");
+				// 2. Upload file any Supabase Storage
+				const extension = file.name.split('.').pop();
+				const fileName = `${Date.now()}-${userUid.substring(0,5)}.${extension}`;
+
+				const { data: storageData, error: storageError } = await _supabase.storage
+					.from('PAYEMENTS')
+					.upload(fileName, file);
+
+				if (storageError) throw storageError;
+
+				// 3. Get public URL
+				const { data: urlData } = _supabase.storage
+					.from('PAYEMENTS')
+					.getPublicUrl(fileName);
+
+				// 4. Insert into payment_proofs
+				const { error: dbError } = await _supabase
+					.from('payment_proofs')
+					.insert([{
+						user_uid: userUid,
+						user_email: emailValue,
+						plan: planName,
+						txid: txidValue,
+						image_url: urlData.publicUrl,
+						status: 'pending',
+						created_at: new Date().toISOString()
+					}]);
+
+				if (dbError) throw dbError;
+
+				alert("Payment proof submitted successfully!");
+				// Optional: haneho success card
+				document.getElementById('successCard').classList.remove('hidden');
+				document.getElementById('payment-content').classList.add('hidden');
+
+			} catch(e) {
+				console.error(e);
+				alert("Error: " + e.message);
+				btn.disabled = false;
+				btn.innerText = "Submit Payment";
 			}
-			const userUid = session.user.id;
-
-			// 2. Upload file any Supabase Storage
-			const extension = file.name.split('.').pop();
-			const fileName = `${Date.now()}-${userUid.substring(0,5)}.${extension}`;
-
-			const { data: storageData, error: storageError } = await _supabase.storage
-				.from('PAYEMENTS')
-				.upload(fileName, file);
-
-			if (storageError) throw storageError;
-
-			// 3. Get public URL
-			const { data: urlData } = _supabase.storage
-				.from('PAYEMENTS')
-				.getPublicUrl(fileName);
-
-			// 4. Insert into payment_proofs
-			const { error: dbError } = await _supabase
-				.from('payment_proofs')
-				.insert([{
-					user_uid: userUid,
-					user_email: emailValue,
-					plan: planName,
-					txid: txidValue,
-					image_url: urlData.publicUrl,
-					status: 'pending',
-					created_at: new Date().toISOString()
-				}]);
-
-			if (dbError) throw dbError;
-
-			alert("Payment proof submitted successfully!");
-			// Optional: haneho success card
-			document.getElementById('successCard').classList.remove('hidden');
-			document.getElementById('payment-content').classList.add('hidden');
-
-		} catch(e) {
-			console.error(e);
-			alert("Error: " + e.message);
-			btn.disabled = false;
-			btn.innerText = "Submit Payment";
 		}
-	}
-			
+		
 	</script>
 </body>
 </html>
