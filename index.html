@@ -210,6 +210,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
     <script>
+	     // Apetraho eto amin'ny andalana voalohany amin'ny script
+		const { createClient } = supabase;
+		const _url = 'https://fhxahmtkptciwadqrdcn.supabase.co';
+		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
+		const _supabase = createClient(_url, _key);
+
         emailjs.init("6JFnKWujJ2xBrpeHg");
 
         const wallets = {
@@ -257,12 +263,7 @@
 			navigator.clipboard.writeText(wallets[currentNetwork]);
 			alert("Address copied!");
 		}
-		// Apetraho eto amin'ny andalana voalohany amin'ny script
-		const { createClient } = supabase;
-		const _url = 'https://fhxahmtkptciwadqrdcn.supabase.co';
-		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
-		const _supabase = createClient(_url, _key);
-
+		
 		/async function submit() {
 		const btn = document.getElementById('sub-btn');
 		const emailValue = document.getElementById('email').value;
