@@ -264,76 +264,61 @@
 		
 		async function submit() {
 			const btn = document.getElementById('sub-btn');
+			const emailValue = document.getElementById('email').value;
+			const txidValue = document.getElementById('txid').value;
+			const file = document.getElementById('file').files[0];
+			const planName = document.getElementById('display-plan').innerText;
+
+			// Check raha feno ny form
+			if (!emailValue || !txidValue || !file) {
+				alert("Fenoy tsara ny banga rehetra azafady, ary ampidiro ny sary.");
+				return;
+			}
+
 			btn.disabled = true;
-			btn.innerText = "Uploading...";
+			btn.innerText = "Andraso kely...";
 
 			try {
-				// --- 1. GET FORM VALUES ---
-				const emailValue = document.getElementById('email').value;
-				const txidValue = document.getElementById('txid').value;
-				const file = document.getElementById('file').files[0];
-				const planName = document.getElementById('display-plan').innerText;
+				// 1. Upload sary
+				const fileExt = file.name.split('.').pop();
+				const fileName = `${Math.random()}-${Date.now()}.${fileExt}`;
+				const filePath = fileName;
 
-				if (!file || !emailValue || !txidValue) {
-					throw new Error("Please fill in all fields.");
-				}
+				let { error: uploadError } = await _supabase.storage
+					.from('PAYMENTS') // Ataovy azo antoka fa misy Bucket mitovy anarana amin'io
+					.upload(filePath, file);
 
-				// --- 2. TRY GET USER (OPTIONAL) ---
-				let userUid = null;
-				try {
-					const { data: { session } } = await _supabase.auth.getSession();
-					userUid = session?.user?.id || null;
-				} catch (e) {
-					userUid = null; // anonymous
-				}
+				if (uploadError) throw uploadError;
 
-				// --- 3. FILE NAME SAFE ---
-				const extension = file.name.split('.').pop();
-				const randomStr = Math.random().toString(36).substring(2, 8);
-				const fileName = `${Date.now()}-${randomStr}.${extension}`;
-
-				// --- 4. UPLOAD FILE ---
-				const { error: storageError } = await _supabase.storage
-					.from('PAYMENTS') // ⚠️ ataovy lowercase marina
-					.upload(fileName, file);
-
-				if (storageError) throw storageError;
-
-				// --- 5. GET PUBLIC URL ---
-				const { data: urlData } = _supabase.storage
+				// 2. Get Public URL
+				const { data: { publicUrl } } = _supabase.storage
 					.from('PAYMENTS')
-					.getPublicUrl(fileName);
+					.getPublicUrl(filePath);
 
-				const imageUrl = urlData.publicUrl;
-
-				// --- 6. INSERT DATABASE ---
+				// 3. Insert any amin'ny Database
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([
 						{
-							user_uid: userUid, // mety null raha tsy login
 							email: emailValue,
 							txid: txidValue,
 							plan: planName,
-							image_url: imageUrl,
+							image_url: publicUrl,
 							status: "pending"
 						}
 					]);
 
 				if (dbError) throw dbError;
 
-				// --- 7. SUCCESS ---
-				btn.innerText = "Submitted!";
-				alert("✅ Payment submitted successfully!");
-
-				// optional reset form
-				document.getElementById('email').value = "";
-				document.getElementById('txid').value = "";
-				document.getElementById('file').value = "";
+				// 4. Success!
+				document.getElementById('payment-content').classList.add('hidden');
+				document.getElementById('successCard').classList.remove('hidden');
+				document.getElementById('success-plan-display').innerText = `${planName} (${currentBilling})`;
 
 			} catch (err) {
-				console.error(err);
-				alert("❌ Error: " + err.message);
+				console.error("Error Detail:", err);
+				alert("Nisy olana: " + (err.message || "Tsy nety ny nandefa azy. Jereo ny Console."));
+			} finally {
 				btn.disabled = false;
 				btn.innerText = "Submit Payment";
 			}
