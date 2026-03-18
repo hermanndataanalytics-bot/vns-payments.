@@ -203,18 +203,14 @@
 
     </div>
     </footer>
-	
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
     <script>
-	    // Apetraho eto amin'ny andalana voalohany amin'ny script
-		const { createClient } = supabase;
-		const _url = 'https://fhxahmtkptciwadqrdcn.supabase.co';
-		const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZoeGFobXRrcHRjaXdhZHFyZGNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0ODcwNzgsImV4cCI6MjA4OTA2MzA3OH0.8Ojt3qoKVWWsXd7VKaIYVJu6bqrO_5UFzGBrm4Bm42k'; 
-		const _supabase = createClient(_url, _key);
+        emailjs.init("6JFnKWujJ2xBrpeHg");
+
         const wallets = {
             'TRC20': 'TA2xKhFrG9Lc53mTpi3stk1VeWVZiqF9mz',
             'ERC20': '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
@@ -257,74 +253,67 @@
         }
 
         function copyAddr() {
-			navigator.clipboard.writeText(wallets[currentNetwork]);
-			alert("Address copied!");
-		}
-		
-		async function submit() {
-			const btn = document.getElementById('sub-btn');
-			const emailValue = document.getElementById('email').value;
-			const txidValue = document.getElementById('txid').value;
-			const file = document.getElementById('file').files[0];
-			const planName = document.getElementById('display-plan').innerText;
+            navigator.clipboard.writeText(wallets[currentNetwork]);
+            alert("Address copied!");
+        }
 
-			if(!file || !emailValue || !txidValue) return alert("Please fill in all the blanks!");
+        async function submit() {
+            const btn = document.getElementById('sub-btn');
+            const emailValue = document.getElementById('email').value;
+            const txidValue = document.getElementById('txid').value;
+            const file = document.getElementById('file').files[0];
+            const planName = document.getElementById('display-plan').innerText;
 
-			btn.innerText = "Processing...";
-			btn.disabled = true;
+            if(!file || !emailValue || !txidValue) return alert("Fenoy ny banga rehetra azafady!");
 
-			try {
-				// 1. Raiso ny session avy amin'ny Supabase
-				const { data: { session }, error: sessionError } = await _supabase.auth.getSession();
-				if (sessionError || !session?.user) {
-					throw new Error("User session not found. Please login first.");
-				}
-				const userUid = session.user.id;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
 
-				// 2. Upload file any Supabase Storage
-				const extension = file.name.split('.').pop();
-				const fileName = `${Date.now()}-${userUid.substring(0,5)}.${extension}`;
-
+            try {
+				// A. Upload any amin'ny Supabase Storage (Bucket: PAYEMENTS)
+				const fileName = `proofs/${emailValue}-${Date.now()}.png`;
 				const { data: storageData, error: storageError } = await _supabase.storage
 					.from('PAYEMENTS')
 					.upload(fileName, file);
 
 				if (storageError) throw storageError;
 
-				// 3. Get public URL
-				const { data: urlData } = _supabase.storage
-					.from('PAYEMENTS')
-					.getPublicUrl(fileName);
+				// Maka ny URL an'ilay sary vao tafakatra
+				const { data: urlData } = _supabase.storage.from('PAYEMENTS').getPublicUrl(fileName);
+				const imageUrl = urlData.publicUrl;
 
-				// 4. Insert into payment_proofs
+				// B. Save any amin'ny Supabase Table (payment_proofs)
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
 					.insert([{
-						user_uid: userUid,
-						user_email: emailValue,
+						user_uid: emailValue, // na ampiasao ny UID raha misy
+						email: emailValue,
 						plan: planName,
 						txid: txidValue,
-						image_url: urlData.publicUrl,
-						status: 'pending',
-						created_at: new Date().toISOString()
+						image_url: imageUrl,
+						status: "pending",
+						duration: currentBilling === 'monthly' ? 'Monthly' : 'Lifetime'
 					}]);
 
 				if (dbError) throw dbError;
 
-				alert("Payment proof submitted successfully!");
-				// Optional: haneho success card
-				document.getElementById('successCard').classList.remove('hidden');
-				document.getElementById('payment-content').classList.add('hidden');
+        // C. Show Success UI (Ajanony eo ny code-nao taloha...)
 
-			} catch(e) {
-				console.error(e);
-				alert("Error: " + e.message);
-				btn.disabled = false;
-				btn.innerText = "Submit Payment";
-			}
-		}
-		
-	</script>
+                // C. Show Success UI
+                const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
+                document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
+                
+                document.getElementById('payment-content').classList.add('hidden');
+                document.getElementById('successCard').classList.remove('hidden');
+
+            } catch (e) {
+                console.error(e);
+                alert("Error: " + e.message);
+                btn.disabled = false;
+                btn.innerText = "Submit Payment";
+            }
+        }
+    </script>
 </body>
 </html>
 
