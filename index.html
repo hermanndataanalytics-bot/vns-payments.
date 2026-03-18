@@ -258,61 +258,82 @@
         }
 
         async function submit() {
-            const btn = document.getElementById('sub-btn');
-            const emailValue = document.getElementById('email').value;
-            const txidValue = document.getElementById('txid').value;
-            const file = document.getElementById('file').files[0];
-            const planName = document.getElementById('display-plan').innerText;
+			const btn = document.getElementById('sub-btn');
+			btn.disabled = true;
+			btn.innerText = "Uploading...";
 
-            if(!file || !emailValue || !txidValue) return alert("Fenoy ny banga rehetra azafady!");
+			try {
+				// --- 1. GET FORM VALUES ---
+				const emailValue = document.getElementById('email').value;
+				const txidValue = document.getElementById('txid').value;
+				const file = document.getElementById('file').files[0];
+				const planName = document.getElementById('display-plan').innerText;
 
-            btn.innerText = "Processing...";
-            btn.disabled = true;
+				if (!file || !emailValue || !txidValue) {
+					throw new Error("Please fill in all fields.");
+				}
 
-            try {
-				// A. Upload any amin'ny Supabase Storage (Bucket: PAYEMENTS)
-				const fileName = `proofs/${emailValue}-${Date.now()}.png`;
-				const { data: storageData, error: storageError } = await _supabase.storage
-					.from('PAYEMENTS')
+				// --- 2. TRY GET USER (OPTIONAL) ---
+				let userUid = null;
+				try {
+					const { data: { session } } = await _supabase.auth.getSession();
+					userUid = session?.user?.id || null;
+				} catch (e) {
+					userUid = null; // anonymous
+				}
+
+				// --- 3. FILE NAME SAFE ---
+				const extension = file.name.split('.').pop();
+				const randomStr = Math.random().toString(36).substring(2, 8);
+				const fileName = `${Date.now()}-${randomStr}.${extension}`;
+
+				// --- 4. UPLOAD FILE ---
+				const { error: storageError } = await _supabase.storage
+					.from('PAYMENTS') // ⚠️ ataovy lowercase marina
 					.upload(fileName, file);
 
 				if (storageError) throw storageError;
 
-				// Maka ny URL an'ilay sary vao tafakatra
-				const { data: urlData } = _supabase.storage.from('PAYEMENTS').getPublicUrl(fileName);
+				// --- 5. GET PUBLIC URL ---
+				const { data: urlData } = _supabase.storage
+					.from('PAYMENTS')
+					.getPublicUrl(fileName);
+
 				const imageUrl = urlData.publicUrl;
 
-				// B. Save any amin'ny Supabase Table (payment_proofs)
+				// --- 6. INSERT DATABASE ---
 				const { error: dbError } = await _supabase
 					.from('payment_proofs')
-					.insert([{
-						user_uid: emailValue, // na ampiasao ny UID raha misy
-						email: emailValue,
-						plan: planName,
-						txid: txidValue,
-						image_url: imageUrl,
-						status: "pending",
-						duration: currentBilling === 'monthly' ? 'Monthly' : 'Lifetime'
-					}]);
+					.insert([
+						{
+							user_uid: userUid, // mety null raha tsy login
+							email: emailValue,
+							txid: txidValue,
+							plan: planName,
+							image_url: imageUrl,
+							status: "pending"
+						}
+					]);
 
 				if (dbError) throw dbError;
 
-        // C. Show Success UI (Ajanony eo ny code-nao taloha...)
+				// --- 7. SUCCESS ---
+				btn.innerText = "Submitted!";
+				alert("✅ Payment submitted successfully!");
 
-                // C. Show Success UI
-                const billingText = currentBilling === 'monthly' ? '(Monthly)' : '(Lifetime)';
-                document.getElementById('success-plan-display').innerText = `${planName} ${billingText}`;
-                
-                document.getElementById('payment-content').classList.add('hidden');
-                document.getElementById('successCard').classList.remove('hidden');
+				// optional reset form
+				document.getElementById('email').value = "";
+				document.getElementById('txid').value = "";
+				document.getElementById('file').value = "";
 
-            } catch (e) {
-                console.error(e);
-                alert("Error: " + e.message);
-                btn.disabled = false;
-                btn.innerText = "Submit Payment";
-            }
-        }
+			} catch (err) {
+				console.error(err);
+				alert("❌ Error: " + err.message);
+				btn.disabled = false;
+				btn.innerText = "Submit Payment";
+			}
+		}
+
     </script>
 </body>
 </html>
