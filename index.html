@@ -300,7 +300,7 @@
 					.from('payment_proofs')
 					.insert([
 						{
-							email: emailValue,
+							user_email: emailValue, // ✅ ovaina eto
 							txid: txidValue,
 							plan: planName,
 							image_url: publicUrl,
