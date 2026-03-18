@@ -285,14 +285,14 @@
 				const filePath = fileName;
 
 				let { error: uploadError } = await _supabase.storage
-					.from('PAYMENTS') // Ataovy azo antoka fa misy Bucket mitovy anarana amin'io
+					.from('PAYEMENTS') // Ataovy azo antoka fa misy Bucket mitovy anarana amin'io
 					.upload(filePath, file);
 
 				if (uploadError) throw uploadError;
 
 				// 2. Get Public URL
 				const { data: { publicUrl } } = _supabase.storage
-					.from('PAYMENTS')
+					.from('PAYEMENTS')
 					.getPublicUrl(filePath);
 
 				// 3. Insert any amin'ny Database
