@@ -1,0 +1,29 @@
+streamlit
+requests
+pandas
+firebase-admin
+qrcode
+fpdf
+python-dotenv
+gspread
+google-auth
+google-cloud-firestore
+plotly          # <--- Ampio ity
+matplotlib      # <--- Ampio koa ity raha mampiasa azy ianao
+yfinance
+ta
+imgbbpy
+plotly          # <--- Ampio ity
+matplotlib      # <--- Ampio koa ity raha mampiasa azy ianao
+python-binance
+yfinance
+ta
+google-genai
+reportlab
+oauth2client
+streamlit-autorefresh
+openai
+kaleido
+groq
+st-supabase-connection
+supabase
